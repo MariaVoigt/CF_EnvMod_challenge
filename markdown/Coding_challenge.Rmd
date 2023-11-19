@@ -1,0 +1,62 @@
+---
+title: "Climate Farmers coding challenge"
+output: html_notebook
+---
+
+
+```{r libraries, message=FALSE, warning=FALSE}
+#----------------#
+# Install/Load Libraries #
+#----------------#
+
+```
+
+
+
+```{r functions}
+#-----------#
+# Functions #
+#-----------#
+
+
+
+
+```
+
+```{r globals, message=FALSE, warning=FALSE}
+#---------#
+# Globals #
+#---------#
+
+# Paths
+here::i_am("src/markdown/Coding_challenge_2.Rmd")
+
+
+
+```
+
+## Region selection
+ From here https://gadm.org/download_country.html
+
+  
+```{r import_region}
+#Import shapefile from gadm database
+# Load shapefile for Portugal from gadm 
+
+
+```
+
+## Data Acquisition
+
+Download data using *https://confluence.ecmwf.int/display/CUSF/Download+CDS+ERA5+data+using+R*
+
+Download soil data like this: *https://git.wur.nl/isric/soilgrids/soilgrids.notebooks/-/blob/master/markdown/webdav_from_R.md*
+
+
+## Data Integration
+
+## Analysis and Visualization
+
+## Sampling Design
+
+## Additional tasks
