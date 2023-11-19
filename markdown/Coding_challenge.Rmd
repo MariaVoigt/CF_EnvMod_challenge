@@ -3,11 +3,26 @@ title: "Climate Farmers coding challenge"
 output: html_notebook
 ---
 
+```{r libraries}
 
-```{r libraries, message=FALSE, warning=FALSE}
 #----------------#
 # Install/Load Libraries #
 #----------------#
+# install.packages(c("here", "sf", "tidyverse", "terra","tidyterra",
+# "ncdf4","ncdf4.helpers", "exactextractr" ))
+library(here)
+library(tidyverse)
+library(sf)
+library(terra)
+library(tidyterra)
+library(ncdf4)
+options("sp_evolution_status"=2) 
+# not optimal, but package seems active, 
+# so hoping they'll update dependencies
+library(exactextractr)
+
+# clearing working directory when debugging
+rm(list = ls())
 
 ```
 
@@ -18,6 +33,15 @@ output: html_notebook
 # Functions #
 #-----------#
 
+# function to clip a shape with a bounding box using coordinates
+clip_polygon_with_box <- function(shape, lon, lat){
+  # create bounding box out of lat and lon coordinates
+  bbox_coordinates <- rbind(c(lon[1],lat[1]), c(lon[2],lat[1]), c(lon[2],lat[2]), 
+                            c(lon[1],lat[2]), c(lon[1],lat[1]) )
+  # create box with crs of input shapefile
+  bbox <- terra::vect(bbox_coordinates, "polygons", crs = crs(shape))
+  return(crop(bbox, shape))
+}
 
 
 
@@ -29,34 +53,44 @@ output: html_notebook
 #---------#
 
 # Paths
-here::i_am("src/markdown/Coding_challenge_2.Rmd")
-
-
+here::i_am("src/markdown/Coding_challenge.Rmd")
 
 ```
 
 ## Region selection
- From here https://gadm.org/download_country.html
 
+I am import a shapefile from gadm database at https://gadm.org/download_country.html. 
+The file is at country level. I want to work with mainland Portugal, so I have to exclude Madeira and Azores.
   
-```{r import_region}
-#Import shapefile from gadm database
-# Load shapefile for Portugal from gadm 
+```{r import_region, fig.asp = 0.8, fig.width = 10}
+#---------------------#
+# 1. Prepare base map #
+#---------------------#
 
+# Load shapefile for Portugal (country level information)
+pt_shape <- terra::vect(here("data/raw/country_shape/gadm41_PRT_shp/gadm41_PRT_0.shp"))
+
+# check crs
+crs(pt_shape,  proj=TRUE )
+
+# I want to work with mainland Portugal, 
+# so I have to exclude Madeira and Azores
+# creating a bounding box for clipping
+# define longitude and latitue of mainland
+pt_lon = c(-9.739,-5.778) 
+pt_lat = c(36.820, 42.253)
+
+# clip the shape of Portugal with the bounding box using customized function
+pt_mainland <- clip_polygon_with_box(pt_shape, lon = pt_lon, lat = pt_lat)
+
+# plot to check
+ggplot() + 
+  geom_sf(data =  sf::st_as_sf(pt_mainland), fill = "grey" )+
+   theme_bw() 
+
+# write out for later use and checking in qgis
+# writeVector(pt_mainland, here("data/processed/study_area/mainland_portugal.shp"),
+#             filetype = "ESRI Shapefile", overwrite = T)
 
 ```
-
-## Data Acquisition
-
-Download data using *https://confluence.ecmwf.int/display/CUSF/Download+CDS+ERA5+data+using+R*
-
-Download soil data like this: *https://git.wur.nl/isric/soilgrids/soilgrids.notebooks/-/blob/master/markdown/webdav_from_R.md*
-
-
-## Data Integration
-
-## Analysis and Visualization
-
-## Sampling Design
-
-## Additional tasks
+```{r import_region, fig.asp = 0.8, fig.width = 10}
