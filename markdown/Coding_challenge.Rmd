@@ -34,13 +34,16 @@ library(tidyterra)    # Extends 'terra' for tidyverse-friendly raster operations
 library(ncdf4)        # Reading/writing data in netCDF format
 options("sp_evolution_status" = 2) 
 library(exactextractr) # extraction of raster values based on geometries and resampling
-
-here::i_am("src/markdown/Coding_challenge.Rmd")
+# plotting
+library(gridExtra)    # Functions for arranging of plots 
+library(grid)         # Tools for grid-based object creation and manipulation
+library(gtable)      # Tools for manipulating graphical object tables in R's grid system
+library(lemon)        # Tools for visualization and manipulation of multi-way data arrays
 
 # set knitr options ------------------------------------------------------------
 options(scipen = 999)
 
-# Scheme for ggplot  ---------------------------------------------------------
+# Theme for ggplot  ---------------------------------------------------------
 
 theme_simple <- function() {
 theme_bw()+
@@ -55,6 +58,14 @@ theme(
   strip.text = element_text(size = 16, face="bold"))
 }
 
+
+
+# set path to script ------------------------------------------------------------
+here::i_am("src/markdown/Coding_challenge.Rmd")
+
+
+# source functions to visualise landcover
+source(here("src/functions/0_visualise_landcover_classes.R"))
 ```
 
 
@@ -72,14 +83,14 @@ As I want to work with mainland Portugal, I excluded Madeira and the Azores.
 
 ```{r load_data_prep, include = FALSE}
 # Load results for data prep ----------------------------------------------------
-local_env_1<- env()
-source(here("src/analysis/1_read_and_prep_data.R"), local = local_env_1, encoding = "UTF-8")
+data_prep_env<- env()
+source(here("src/analysis/1_read_and_prep_data.R"), local = data_prep_env, encoding = "UTF-8")
 
 ```
 
 ```{r basemap, fig.asp = 0.8, fig.width = 10, echo = FALSE, fig.cap="Shape of mainland Portugal used to restrict the analysis of soil, landcover and climate data."}
 ggplot() + 
-  geom_sf(data=sf::st_as_sf(local_env_1$pt_mainland), color = "black", 
+  geom_sf(data=sf::st_as_sf(data_prep_env$pt_mainland), color = "black", 
           fill = "grey")+
   theme_simple()
 
@@ -137,7 +148,7 @@ Each layer was clipped with the shape of mainland Portugal for the analysis.
 
 ```{r temperature_original, fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, fig.cap="Temperature (°C) in Portugal for January 2020."}
 ggplot() +
-  geom_spatraster(data = local_env_1$temperature_pt$t2m_1)   +
+  geom_spatraster(data = data_prep_env$temperature_pt$t2m_1)   +
   scale_fill_gradient(name = "Temperature (°C)", 
                       low = "blue", high = "red", na.value = "white") +  # 
    theme_simple()
@@ -148,7 +159,7 @@ ggplot() +
 ### Evapotranspiration
 ```{r evapotransp_original, fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, fig.cap="Evapotranspiration (m) in Portugal for January 2020."}
 ggplot() +
-  geom_spatraster(data = local_env_1$evapotransp_pt$e_1)   +
+  geom_spatraster(data = data_prep_env$evapotransp_pt$e_1)   +
   scale_fill_gradient(name = "Evapotranspiration (m)", 
                       low = "lightgrey", high = "gray10", na.value = "white") +
    theme_simple()
@@ -157,7 +168,7 @@ ggplot() +
 ### Precipitation
 ```{r precip_original, fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, fig.cap="Precipitation (m) in Portugal for January 2020."}
 ggplot() +
-  geom_spatraster(data = local_env_1$precipitation_pt$tp_1)   +
+  geom_spatraster(data = data_prep_env$precipitation_pt$tp_1)   +
   scale_fill_gradient(name = "Precipitation (m)", 
                       low = "lightblue", high = "darkblue", na.value = "white") +
   theme_simple()
@@ -167,11 +178,9 @@ ggplot() +
 <div class="p">
 ```{r landcover_original, fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, message=FALSE, warning=FALSE, fig.cap="<span class='caption'>Land cover classes in Portugal in 2020.</span>"}
 
-# source functions to visualise landcover
-source(here("src/functions/0_visualise_landcover_classes.R"))
-landcover_pt <- landcover_categories(local_env_1$landcover_pt, 3)
+landcover_pt <- landcover_categories(data_prep_env$landcover_pt, 3)
 
-landcover_classes_exist <- existing_landcover_classes(local_env_1$landcover_pt, 3)
+landcover_classes_exist <- existing_landcover_classes(data_prep_env$landcover_pt, 3)
 
 ggplot() +
   geom_spatraster(data = landcover_pt, mapping = aes(fill = label) )   +
@@ -191,9 +200,9 @@ slightly, so they could be distinguished better.
 
 ### Soil
 ```{r soil_original, fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, fig.cap="Soil organic carbon content (t/ha) in Portugal."}
-# make custom palette
+
 ggplot() +
-  geom_spatraster(data = local_env_1$SOC_pt)   +
+  geom_spatraster(data = data_prep_env$SOC_pt)   +
  scale_fill_gradientn(name = "Soil organic carbon (t/ha)",
                       colors = c("#4c0073", "#2a895a", "#ffffbe",
                                   na.value = "white"))+
@@ -222,44 +231,152 @@ I compared the resolution and extent of all layers, to allow for joint analysis 
   </tr>
   <tr>
     <td style="padding: 5px; border: 1px solid black;">Climate variables</td>
-    <td style="padding: 5px; border: 1px solid black;">`r round(res(local_env_1$evapotransp_pt)[1], 4)`</td>
-    <td style="padding: 5px; border: 1px solid black;">`r round(res(local_env_1$evapotransp_pt)[2], 4)`</td>
-    <td style="padding: 5px; border: 1px solid black;">`r round(ext(local_env_1$evapotransp_pt)[1], 4)`</td>
-    <td style="padding: 5px; border: 1px solid black;">`r round(ext(local_env_1$evapotransp_pt)[3], 4)`</td>
+    <td style="padding: 5px; border: 1px solid black;">`r round(res(data_prep_env$evapotransp_pt)[1], 4)`</td>
+    <td style="padding: 5px; border: 1px solid black;">`r round(res(data_prep_env$evapotransp_pt)[2], 4)`</td>
+    <td style="padding: 5px; border: 1px solid black;">`r round(ext(data_prep_env$evapotransp_pt)[1], 4)`</td>
+    <td style="padding: 5px; border: 1px solid black;">`r round(ext(data_prep_env$evapotransp_pt)[3], 4)`</td>
   </tr>
   <tr>
     <td style="padding: 5px; border: 1px solid black;">Land Cover</td>
-    <td style="padding: 5px; border: 1px solid black;">`r round(res(local_env_1$landcover_pt)[1], 4)`</td>
-    <td style="padding: 5px; border: 1px solid black;">`r round(res(local_env_1$landcover_pt)[2], 4)`</td>
-    <td style="padding: 5px; border: 1px solid black;">`r round(ext(local_env_1$landcover_pt)[1], 4)`</td>
-    <td style="padding: 5px; border: 1px solid black;">`r round(ext(local_env_1$landcover_pt)[3], 4)`</td>
+    <td style="padding: 5px; border: 1px solid black;">`r round(res(data_prep_env$landcover_pt)[1], 4)`</td>
+    <td style="padding: 5px; border: 1px solid black;">`r round(res(data_prep_env$landcover_pt)[2], 4)`</td>
+    <td style="padding: 5px; border: 1px solid black;">`r round(ext(data_prep_env$landcover_pt)[1], 4)`</td>
+    <td style="padding: 5px; border: 1px solid black;">`r round(ext(data_prep_env$landcover_pt)[3], 4)`</td>
   </tr>
   <tr>
     <td style="padding: 5px; border: 1px solid black;">Soil Organic Carbon</td>
-    <td style="padding: 5px; border: 1px solid black;">`r round(res(local_env_1$SOC_pt)[1], 4)`</td>
-    <td style="padding: 5px; border: 1px solid black;">`r round(res(local_env_1$SOC_pt)[2], 4)`</td>
-    <td style="padding: 5px; border: 1px solid black;">`r round(ext(local_env_1$SOC_pt)[1], 4)`</td>
-    <td style="padding: 5px; border: 1px solid black;">`r round(ext(local_env_1$SOC_pt)[3], 4)`</td>
+    <td style="padding: 5px; border: 1px solid black;">`r round(res(data_prep_env$SOC_pt)[1], 4)`</td>
+    <td style="padding: 5px; border: 1px solid black;">`r round(res(data_prep_env$SOC_pt)[2], 4)`</td>
+    <td style="padding: 5px; border: 1px solid black;">`r round(ext(data_prep_env$SOC_pt)[1], 4)`</td>
+    <td style="padding: 5px; border: 1px solid black;">`r round(ext(data_prep_env$SOC_pt)[3], 4)`</td>
   </tr>
 </table>
-
 
 </div>
 
 <div class="vspace_small"></div>
 The climate variables (which share the same spatial dimensions) are at a lower resolution than the land cover and SOC layer and also have different origins. Therefore I resampled the latter to the same resolution, origin and extent as the climate variables. 
 
+```{r load_data_integration, include = FALSE}
+# Load results of data integration -----------------------------------------
+data_integrate_env<- env()
+source(here("src/analysis/2_integrate_data.R"), local = data_integrate_env, encoding = "UTF-8")
+```
+
 ## Data resampling {.tabset}
-### Landcover data integration
-Showing the different options
-also have to think here how I load the things into that script
-whether I save the portugal layers somewhere or just load them from
-the source file
+### Land cover data integration
+<div class="p">
+Land cover is a categorical variable. I explored two options to resample this data. First using the method "nearest neighbor", which is typically used for categorical variables,as it assigns new pixel values by selecting the nearest original pixel value without any interpolation, effectively copying the closest value to the new pixel location. However, when resampling to a lower resolution it might be more interesting using the class which most high resolution pixels have within the lower resolution. I tested that option as well and compared the maps visually in terms of pattern. 
+```{r resample_code_lc, eval = FALSE}
+# resample option 1 using nearest neighbor
+landcover_pt_near <- terra::resample(landcover_pt, resample_raster, method = "near")
+
+# resample option 2 using majority
+landcover_pt_majority <- 
+  exactextractr::exact_resample(landcover_pt, 
+                                resample_raster, 
+                                'majority')
+```
+
+
+
+```{r landcover_resample,  fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, message=FALSE, warning=FALSE, fig.cap="<span class='caption'>Land cover classes in Portugal in 2020 resampled to climate data with two different methods.</span>"}
+# define the categorical landcover classes for the plots
+landcover_pt_near <- landcover_categories(data_integrate_env$landcover_pt_near , 3)
+landcover_classes_near_exist <- existing_landcover_classes(landcover_pt_near, 3)
+
+landcover_pt_major <- landcover_categories(data_integrate_env$landcover_pt_majority, 3)
+landcover_classes_major_exist <- existing_landcover_classes(landcover_pt_major , 3)
+
+plot1 <- ggplot() +
+  geom_spatraster(data = landcover_pt_near, mapping = aes(fill = label) )   +
+  scale_fill_manual(
+    values = landcover_classes_near_exist$hex,
+    na.value = "white")+
+   labs(fill = NULL) +
+  ggtitle(expression(paste("Land cover reprojected with method ", '"near"')))+
+  theme_simple()+ 
+   theme(legend.position = "none")
+
+plot2 <- ggplot() +
+  geom_spatraster(data = landcover_pt_major, mapping = aes(fill = label) )   +
+  scale_fill_manual(
+    values = landcover_classes_major_exist$hex,
+    na.value = "white")+
+   labs(fill = NULL) +
+   ggtitle(expression(paste("Land cover reprojected with method ", '"majority"')))+
+  theme_simple() + 
+   theme(legend.position = "none")
+  
+
+# Combine plots into a grid arrangement
+grid.arrange(plot1, plot2, ncol = 2)
+```
+
+When resampling with method "near" the landcover classes are very patchy and fragmented. The layer resampled with majority has more continuous representation of classes and the logic of that resampling method is more sound, so I am using that layer for the analysis.
+
+</div>
+<div class="vspace_small"></div>
+
 
 ### Soil organic carbon data integration
-Showing the different options
+Soil organic carbon (SOC) is a continous variable. I want to work with the mean SOC per lower resolution cell. Typically continuous rasters are resampled using method bilinear, which calculates values of a grid location based on nearby grid cells, using a weighted average of the four nearest cell centers.  I tested this option, as well as using an average function within the `exact_resample()` function used for land cover. This function aggregates cells before resampling, so that the average is not based on four grid-cells but all grid cells covered by the lower resolution cell. I compared the maps visually in terms of pattern. 
+```{r resample_code_soil, eval = FALSE}
+# resample option 1
+SOC_pt_bil <- resample(landcover_pt, resample_raster, method = "bilinear")
+
+# resample option 2
+SOC_pt_mean <- exactextractr::exact_resample(SOC_pt, 
+                                             resample_raster, 
+                                             'mean')
+```
+
+```{r soil_resample,  fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, message=FALSE, warning=FALSE, fig.cap="<span class='caption'>Soil organic carbon layer in Portugal resampled with two different methods.</span>"}
+plot1 <- ggplot() +
+  geom_spatraster(data = data_prep_env$SOC_pt)   +
+ scale_fill_gradientn(name = "Soil organic carbon (t/ha)",
+                      colors = c("#4c0073", "#2a895a", "#ffffbe",
+                                  na.value = "white"))+
+    ggtitle(expression(paste("Original SOC layer")))+
+   theme_simple()
+
+plot2 <- ggplot() +
+  geom_spatraster(data = data_integrate_env$SOC_pt_bil)   +
+  scale_fill_gradientn(name = "Soil organic carbon (t/ha)",
+                       colors = c("#4c0073", "#2a895a", "#ffffbe",
+                                  na.value = "white"),
+                       limits = c(minmax(data_prep_env$SOC_pt)[1],
+                                             minmax(data_prep_env$SOC_pt)[2]))+
+  ggtitle(expression(paste("SOC reprojected with method ", '"bilinear"')))+
+   theme_simple()
+
+plot3 <- ggplot() +
+  geom_spatraster(data = data_integrate_env$SOC_pt_mean)   +
+  scale_fill_gradientn(name = "Soil organic carbon (t/ha)",
+                       colors = c("#4c0073", "#2a895a", "#ffffbe",
+                                  na.value = "white"),
+                             limits = c(minmax(data_prep_env$SOC_pt)[1],
+                                             minmax(data_prep_env$SOC_pt)[2]))+
+  ggtitle(expression(paste("SOC reprojected with method ", '"mean"')))+
+   theme_simple()
+
+
+# Combine plots into a grid arrangement
+grid.arrange(plot1, arrangeGrob(plot2, plot3, ncol = 2), ncol = 1)
+```
+When resampling with method ´exact_resample´ and function "mean" the pattern of low SOC values along the cost and high values in the North of Portugal is maintained, therefore I am going to use that layer for the analysis. 
+
+</div>
+<div class="vspace_small"></div>
+
 
 # Analysis and Visualization
+
+I can then check whether the dimensions for all layers match before proceeding with the analysis using the ´compareGeom()´ function.
+```{r code_compareGEOM, eval = FALSE}
+compareGeom(evapotransp_pt, precipitation_pt, temperature_pt,
+            landcover_pt, SOC_pt)
+```
 
 # Sampling scheme
 
