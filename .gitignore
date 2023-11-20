@@ -51,3 +51,10 @@ rsconnect/
 # Apple folder info
 .DS_Store
 
+# html stuff
+*.txt
+*.webp
+*Favicon.html
+*.ico
+*.png
+
