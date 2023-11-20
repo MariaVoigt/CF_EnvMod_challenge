@@ -34,6 +34,6 @@ The function script for visualizing landcover classes is stored in the `function
 R Markdown files containing the comprehensive report are located in the `markdown` folder.
 
 The HTML report detailing the analysis are located in the `markdown` folder directory:  
-[src/markdown/Coding_challenge.html](src/markdown/Coding_challenge.html)
+[markdown/Coding_challenge.html](markdown/Coding_challenge.html)
 
 
