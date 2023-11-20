@@ -47,7 +47,7 @@ clay <- 16.3  # Percent clay
 Cinputs <- 2.7  # Annual C inputs to soil in Mg/ha/yr
 
 # Create a vector of time steps for the simulation
-years <- seq(1/12, 500, by = 1/12) 
+years <- seq(1/12, 300, by = 1/12) 
 
 
 
@@ -78,11 +78,7 @@ df_plot <- data.frame(years = years, Ct1)
 df_plot_long <- df_plot %>%
   tidyr::gather(key = "Pool", value = "C_stocks", -years)
 
-# Plot using ggplot2
-ggplot(df_plot_long, aes(x = years, y = C_stocks, color = Pool)) +
-  geom_line() +
-  labs(x = "Time (years)", y = "C stocks (Mg/ha)", 
-       title = "Carbon Stocks Over Time") +
-  scale_color_manual(values = c("blue", "red", "green", "orange", "purple"),
-                     labels = c("DPM", "RPM", "BIO", "HUM", "IOM")) +
-  theme_minimal()
+# Calculate final pool sizes
+pool_size <- as.numeric(tail(Ct1, 1))
+names(pool_size) <- c("DPM", "RPM", "BIO", "HUM", "IOM")
+# end ---------------------------------------------------------------------
