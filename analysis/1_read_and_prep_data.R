@@ -1,41 +1,22 @@
-# Script to do xxxx
-
-# what do I need to do
-
-# break script into smaller subscripts
-# make function for Portugal layer making and maybe some other things
-# save the pt layers out to be importet
-# fix all plots so they look nice
-
-# still open in general
-# -The application of a soil carbon model (e.g. using the R package soilR) and
-# plotting of results for a single point using your downloaded and/or artificial
-# data as input.
-# - Your code translated from R to Python or vice-versa
-# A more sophisticated sampling design, such as using stratified
-
-
-#--------------------------------------------------------------#
-# This is a script for the Climate Farmers coding challenge    #
-# It loads climate and soil data                               #
-# prepares them for visualization, plots data over time and    #
-# designs a sampling regime                                    #
-#--------------------------------------------------------------#
+#--------------------------------------------------------#
+# First script for the Climate Farmers coding challenge  #
+# Tasks:                                                 # 
+# - loads baseshape, climate, land cover and  soil data, #
+# - clips them with the baseshape                        #
+# - writes files out for later processing                #
+#--------------------------------------------------------#
 
 # load packages ---------------------------------------------------------
 
 # basic
 library(tidyverse)   # Collection of R packages designed for data science
-library(rlang)       # A toolbox for working with base type (e.g. environments)
+library(here)        # Facilitates easy file path management within R projects
+# spatial operations
+library(sf)          # Comprehensive toolset for handling spatial data
+library(terra)       # Efficient manipulation & analysis of raster data
+library(tidyterra)   # Extends 'terra' for tidyverse-friendly raster operations
 
-library(sf)           # Comprehensive toolset for handling spatial data
-library(terra)        # Efficient manipulation & analysis of raster data
-library(tidyterra)    # Extends 'terra' for tidyverse-friendly raster operations
-library(ncdf4)        # Reading/writing data in netCDF format
-options("sp_evolution_status" = 2) 
-library(exactextractr) # extraction of raster values based on geometries and resampling
-library(here)
-
+# set the path
 here::i_am("src/analysis/1_read_and_prep_data.R")
 
 # * load functions --------------------------------------------------------
@@ -82,6 +63,10 @@ pt_mainland <- clip_polygon_with_box(pt_shape, lon = pt_lon, lat = pt_lat)
 #ggplot() + 
 #  geom_sf(data =  sf::st_as_sf(pt_mainland), fill = "grey" )
 
+# option to write out for later use and checking in qgis
+# would switch this off if script read often and running times are important 
+writeVector(pt_mainland, here("data/processed/study_area/mainland_portugal.shp"),
+             filetype = "ESRI Shapefile", overwrite = T)
 
 # 2. load and prepare weather data ----------------------------------------
 
@@ -96,17 +81,30 @@ weather_data <-
 # * Clip evapotranspiration data ------------------------------------------
 evapotransp_pt <- clip_data_shape(weather_data, pt_mainland, "e_")
 
+writeRaster(evapotransp_pt, 
+            filename = here("data/processed/raster_data/evapotransp_pt.tif"),
+            datatype = "FLT8S",
+            filetype = "GTiff",
+            overwrite = T)
 
 # * Clip and prepare temperature data -------------------------------------
 temperature_pt <-  clip_data_shape(weather_data, pt_mainland, "t2m_")
 # native unit is Kelvin, need to convert to degree celsius by subtracting 273.15
 temperature_pt <- temperature_pt - 273.15
-
+writeRaster(temperature_pt, 
+            filename = here("data/processed/raster_data/temperature_pt.tif"), 
+            datatype = "FLT8S",
+            filetype = "GTiff",
+            overwrite = T)
 
 
 # Clip and prepare precipitation data -------------------------------------
 precipitation_pt <-clip_data_shape(weather_data, pt_mainland, "tp_")
-
+writeRaster(precipitation_pt, 
+            filename = here("data/processed/raster_data/precipitation_pt.tif"), 
+            datatype = "FLT8S",
+            filetype = "GTiff",
+            overwrite = T)
 
 # 3. Load and prepare landcover data --------------------------------------
 # Landcover data was downloaded from: https://cds.climate.copernicus.eu/#!/home
@@ -117,7 +115,11 @@ landcover_data <-
 
 # * Clip landcover to Portugal ----------------------------
 landcover_pt <- clip_data_shape(landcover_data, pt_mainland, "lccs_class")
-
+writeRaster(landcover_pt, 
+            filename = here("data/processed/raster_data/landcover_pt.tif"),
+            datatype = "INT1U",
+            filetype = "GTiff",
+            overwrite = T)
 
 # 4. soil organic carbon data ---------------------------------------------
 # soil data was downloaded from:  https://soilgrids.org/
@@ -134,6 +136,10 @@ SOC_merged <- merge(SOC_tiles_collection)
 
 SOC_pt <- clip_data_shape(SOC_merged , pt_mainland, "SOC_tile1")
 
-
+writeRaster(SOC_pt, 
+            filename = here("data/processed/raster_data/SOC_pt.tif"), 
+            datatype = "FLT8S",
+            filetype = "GTiff",
+            overwrite = T)
 
 # end --------------------------------------------------------------------------
