@@ -1,7 +1,8 @@
 #---------------------------------------------------------#
-# Second script for the Climate Farmers coding challenge  #
+# Script No 2 -  Climate Farmers coding challenge         #
 # Tasks:                                                  # 
 # - resample land cover and soil data                     #
+# - write resampled rasters out                           #
 #---------------------------------------------------------#
 
 # load packages ---------------------------------------------------------
@@ -71,7 +72,7 @@ SOC_pt_mean <- exactextractr::exact_resample(SOC_pt,
                                              'mean')
 
 # fixing the name of the layer, as the resampling raster name is used
-names(SOC_pt_mean) <- "SOC_2020"
+names(SOC_pt_mean) <- "SOC"
 
 # export SOC_pt_mean
 writeRaster(SOC_pt_mean, 

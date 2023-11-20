@@ -1,7 +1,7 @@
 #---------------------------------------------------------#
-# Second script for the Climate Farmers coding challenge  #
+# Script No 3 -  Climate Farmers coding challenge         #
 # Tasks:                                                  # 
-# - resample land cover and soil data                     #
+# - prepare data for visualisation.                       #
 #---------------------------------------------------------#
 rm(list = ls())
 
@@ -54,75 +54,36 @@ variables_df_summary <- variables_df %>%
   group_by(label) %>% 
   summarise(pixel_count = n())
 
+
+# lookup for colors for remaining classes
+landcover_colors_all <- variables_df_summary %>% 
+  left_join(landcover_classes)
+
 # filtering classes with less than 1 % data, water or NA labels
 variables_considered <- 
   variables_df_summary[variables_df_summary$pixel_count >10 &
                          variables_df_summary$label != "water" &
                          variables_df_summary$label != "NA" , ]
 
-variables_df <- filter(variables_df, (label %in% variables_considered$label))
+variables_df_filter <- filter(variables_df, (label %in% variables_considered$label))
 
-# * Visualise distribution of landcover classes --------------------------------
+# * Prepare visualisation of distribution of landcover classes ----------------
 
 # lookup for colors for remaining classes
 landcover_colors <- variables_considered %>% 
   left_join(landcover_classes)
 
-## visualise distribution of landcover classes
-ggplot(variables_df)+
-  geom_bar(aes(x = label, fill = label))+ 
-  scale_fill_manual(
-    values = landcover_colors$hex )+
-  theme_bw()
-warning('make my own theme here')
 
-# * Visualise Soil organic carbon per landcover --------------------------------
 
-SOC_per_lc <- variables_df %>% 
-  group_by(label) %>% 
-  summarize(mean_SOC_2020 = mean(SOC_2020, na.rm = T), # calculating mean
-            stdev_SOC_2020 = sd(SOC_2020, na.rm = T), # calculating stdeviation
-            nr_pixels = n()) %>% # how many pixels in each class
-  left_join(landcover_classes, by = "label")
-
-warning('fix axis names, label names, make sure the yellows are improved
-        make my own theme')
-
-ggplot(SOC_per_lc)+
-  geom_bar(aes(x = label, y = mean_SOC_2020, fill = label), 
-           #color = "blue", fill = "white", 
-           stat = "identity",
-           #position = "dodge"
-  )+
-  scale_fill_manual(
-    values = SOC_per_lc$hex )+
-  geom_errorbar( aes(ymin=mean_SOC_2020-stdev_SOC_2020, 
-                     ymax=mean_SOC_2020+stdev_SOC_2020, 
-                     x = label), linewidth = 0.6, width=1.2)+
-  theme_bw() +
-  theme(
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    panel.background = element_blank(),
-    axis.text.y = element_text(size = 12),
-    axis.text.x=element_text(size = 12, angle = 90, hjust=0.5,vjust=0.2),
-    # axis.text.x = element_text(angle = 60, hjust = 1),
-    axis.title=element_text(size = 18, face = "bold"),
-    #legend.title=element_text(size=18, face = "bold") ,
-    legend.position="none",
-    strip.background=element_rect(colour="#f0f0f0",fill="#f0f0f0"),
-    strip.text = element_text(size = 16, face="bold"),
-    plot.margin = unit(c(0.1,0.1,0.1,0.1),"cm"))
-
-# * Visualise climate variables per landcover ----------------------------------
+# * Prepare visualise climate variables per landcover ----------------------------------
 
 # month_id to year and month
 month_lookup <- data.frame(month_id = c(1:36), 
                            year = rep(c(2020:2022), each= 12), 
                            month = rep(c(1:12), times= 3))
 
-climate_per_lc <- variables_df %>% 
-  dplyr::select(!(SOC_2020)) %>% 
+climate_per_lc <- variables_df_filter  %>% 
+  dplyr::select(!(SOC)) %>% 
   # change to long format so easier to plot
   pivot_longer(cols = e_1:t2m_36, 
                names_to = c('variable','month_id'),
@@ -132,54 +93,20 @@ climate_per_lc <- variables_df %>%
   group_by(label, variable, month_id) %>% 
   summarize(mean_value= mean(value, na.rm = T), # calculating mean
             stdev_value = sd(value, na.rm = T)) %>%  # calculating stdeviation
-  # add years and months
+  # add years and months for better representation
   left_join(month_lookup, by = "month_id") %>% 
-  mutate(month_year = paste0(month, "_", year))
-warning('consider adding month word')
-
-ggplot(climate_per_lc)+
-  geom_line(aes(x = as.factor(month_id), y = mean_value, color = label, group = label), )+
-  scale_colour_manual(
-    values = landcover_classes_exist$hex )+
-  facet_wrap(~variable, scales = "free")
-
-warning('ADD an error range for sd maybe')
-
-warning('Fix this whole section')
-# playing around with plotting for individual variables
-# fix this to something definitive
-test <- filter(climate_per_lc, variable == "e")
-
-ggplot(test)+
-  geom_line(aes(x = as.factor(month_id), y = mean_value, group = label), )+
-  scale_colour_manual(
-    values = landcover_classes_exist$hex )+
-  facet_wrap(~label, scales = "fixed")
+  mutate(date_obs = as.Date(paste(year, month, "15", sep = "-")))
 
 
-test <- filter(climate_per_lc, variable == "tp")
+# * Prepare visualisation of soil organic carbon per landcover -----------------
 
-ggplot(test)+
-  geom_line(aes(x = as.factor(month_id), y = mean_value, group = label), )+
-  scale_colour_manual(
-    values = landcover_classes_exist$hex )+
-  facet_wrap(~label, scales = "fixed")
+SOC_per_lc <- variables_df_filter  %>% 
+  group_by(label) %>% 
+  summarize(mean_SOC = mean(SOC, na.rm = T), # calculating mean
+            stdev_SOC = sd(SOC, na.rm = T), # calculating stdeviation
+            nr_pixels = n()) %>% # how many pixels in each class
+  left_join(landcover_classes, by = "label")
 
 
 
-test <- filter(climate_per_lc, variable == "t2m")
-ggplot(test)+
-  geom_line(aes(x = as.factor(month_id), y = mean_value, group = label), )+
-  scale_colour_manual(
-    values = landcover_classes_exist$hex )+
-  facet_wrap(~label, scales = "fixed")
-
-# I could look at the 5 most important landcover classes
-# with all together
-variables_df_summary <- variables_df_summary %>% 
-  dplyr::arrange(desc(pixel_count))
-
-
-
-# I Could also look at monthly averages over the three variables
-# I need to improve the plots to look nice especially for the years
+# end ---------------------------------------------------------------------

@@ -1,3 +1,8 @@
+#---------------------------------------------------------#
+# Function script -  Climate Farmers coding challenge     #
+# Tasks:                                                  # 
+# - functions to visualise landcover classes              #
+#---------------------------------------------------------#
 
 # Function to represent landcover classes  --------------------------------
 here::i_am("src/functions/0_visualise_landcover_classes.R")

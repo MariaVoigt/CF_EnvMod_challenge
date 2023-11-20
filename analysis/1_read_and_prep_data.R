@@ -1,5 +1,5 @@
 #--------------------------------------------------------#
-# First script for the Climate Farmers coding challenge  #
+# Script No 1 -  Climate Farmers coding challenge        #
 # Tasks:                                                 # 
 # - loads baseshape, climate, land cover and  soil data, #
 # - clips them with the baseshape                        #
