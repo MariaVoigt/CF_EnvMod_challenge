@@ -2,10 +2,7 @@
 
 # what do I need to do
 
-# break script into smaller subscripts
-# make function for Portugal layer making and maybe some other things
-# save the pt layers out to be importet
-# fix all plots so they look nice
+# include the functions for landcover
 
 # still open in general
 # -The application of a soil carbon model (e.g. using the R package soilR) and
@@ -37,11 +34,10 @@ suppressWarnings(if(any(pkgs != "package:"))
 
 rm(pkgs)
 
-# * load libraries --------------------------------------------------------
-
+# * load libraries -------------------------------------------------------
 #install if required
 # install.packages(c("sf", "tidyverse", "terra","tidyterra", 
-#                    "ncdf4","ncdf4.helpers", "exactextractr" ))
+#                    "ncdf4", "exactextractr" ))
 
 library(tidyverse)
 library(sf)
@@ -49,12 +45,11 @@ library(terra)
 library(tidyterra)
 library(ncdf4)
 options("sp_evolution_status" = 2) 
-# not optimal, but package seems active, 
-# so hoping they'll update dependencies
 library(exactextractr)
 
 # * load functions --------------------------------------------------------
 
+# function to clip polygon with a bounding box given by its coordinates
 clip_polygon_with_box <- function(shape, lon, lat){
   # create bounding box out of lat and lon coordinates
   bbox_coordinates <- rbind(c(lon[1],lat[1]), c(lon[2],lat[1]), c(lon[2],lat[2]), 
@@ -64,132 +59,73 @@ clip_polygon_with_box <- function(shape, lon, lat){
   return(crop(bbox, shape))
 }
 
+# function to clip raster with a polygon shape
 clip_data_shape <- function(raster_data,crop_shape, variable_name){
   if (crs(raster_data, proj = T) == crs(crop_shape, proj = T) ){
     raster_data <- raster_data[variable_name]
     raster_crop <- terra::crop(raster_data,crop_shape, mask = TRUE)
     return(raster_crop)}else {
-      # if crs not the same return error
+      # checking for crs match
       stop("Projection doesn't match!")
     }
 }
 
 # 1. prepare base map -----------------------------------------------------
-
-# I decided to work with Portugal
-# describe a bit more here
-
 # * import shapefile and set bounding box ---------------------------------
 
 # Import shapefile from gadm database at https://gadm.org/download_country.html
 # Load shapefile for Portugal (country level information)
 pt_shape <- terra::vect("./data/raw/country_shape/gadm41_PRT_shp/gadm41_PRT_0.shp")
 
-# check crs
-crs(pt_shape,  proj = TRUE )
-
 # I want to work with mainland Portugal, 
 # so I have to exclude Madeira and Azores
 
-# creating a bounding box for clipping
-# define longitude and latitue of mainland
+# Need to define a bounding box for clipping (longitude and latitude of mainland)
 pt_lon = c(-9.739,-5.778) 
 pt_lat = c(36.820, 42.253)
 
 # clip the shape of Portugal with the bounding box using customized function
 pt_mainland <- clip_polygon_with_box(pt_shape, lon = pt_lon, lat = pt_lat)
 
-# * quick plot data -------------------------------------------------------
-ggplot() + 
-  geom_sf(data =  sf::st_as_sf(pt_mainland), fill = "grey" )
+# can plot the data to check
+#ggplot() + 
+#  geom_sf(data =  sf::st_as_sf(pt_mainland), fill = "grey" )
 
-# write out for later use and checking in qgis
-# writeVector(pt_mainland, ("./data/processed/study_area/mainland_portugal.shp"),
-#             filetype = "ESRI Shapefile", overwrite = T)
 
 # 2. load and prepare weather data ----------------------------------------
 
-# Weather data was downloaded from:
-# need to be subsetted, and then cropped to Portugal
+# Weather data was downloaded from:https://cds.climate.copernicus.eu/#!/home
+# need to subset the relevant variables, and then cropped to Portugal
 
 # * import raster ---------------------------------------------------------
 weather_data <- 
   terra::rast("./data/raw/weather/ERA5_Land_monthly_averaged_data_2020_2022.nc")
 
-names(weather_data)
 
-# check whether we need to adjust crs to the basemap
-crs(weather_data, proj = T) == crs(pt_mainland, proj = T)
-# we don't 
-
-warning('Wird das noch benötigt bzw. fehlt hier etwas?')
-warning('Kommentare ggf. anpassen. Besser ist es wenn Kommentare darstellen warum dieser Schritt notwenig ist und nicht was passiert')
-
-
-# * Clip evaporation data ------------------------------------------------------
-warning('Describe data')
+# * Clip evapotranspiration data ------------------------------------------
 evapotransp_pt <- clip_data_shape(weather_data, pt_mainland, "e_")
 
-warning('Falls du das Sktipt am Ende in das R Markdown Skript einbindest, solltest du die Plots auskommentieren um Resource zu schonen.')
-#visualize
-plot(evapotransp_pt$e_1)
 
-# * temperature data ------------------------------------------------------
-warning('Describe data')
+# * Clip and prepare temperature data -------------------------------------
 temperature_pt <-  clip_data_shape(weather_data, pt_mainland, "t2m_")
-# convert to degree celsius by subtracting 273.15
+# native unit is Kelvin, need to convert to degree celsius by subtracting 273.15
 temperature_pt <- temperature_pt - 273.15
 
-plot(temperature_pt$t2m_1)
 
-# * precipitation data ----------------------------------------------------
-warning('Describe data')
-
+# Clip and prepare precipitation data -------------------------------------
 precipitation_pt <-clip_data_shape(weather_data, pt_mainland, "tp_")
-#visualize
-plot(precipitation_pt$tp_8)
 
-# 3. load and prepare landcover data --------------------------------------
-# for the area covering portugal
-# Landcover data was downloaded from: 
 
-# * import raster ---------------------------------------------------------
+# 3. Load and prepare landcover data --------------------------------------
+# Landcover data was downloaded from: https://cds.climate.copernicus.eu/#!/home
 
+# * import global raster ---------------------------------------------------
 landcover_data <- 
   terra::rast("./data/raw/landcover/C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc")
 
-warning('check and how to describe this')
-# check names
-names(landcover_data)
-
-# * subset data and crop landcover to portugal ----------------------------
+# * Clip landcover to Portugal ----------------------------
 landcover_pt <- clip_data_shape(landcover_data, pt_mainland, "lccs_class")
 
-#visualize
-plot(landcover_pt)
-# which and how many classes
-unique(landcover_pt$lccs_class)
-nrow(unique(landcover_pt$lccs_class))
-hist((landcover_pt$lccs_class))
-
-landcover_netcdf<- nc_open(("./data/raw/landcover/C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"))
-print(landcover_netcdf)
-
-warning('Edit here the three yellow classes')
-# extracted from metadata
-landcover_classes <- read.csv("./data/raw/landcover/lc_classes.csv",
-                              stringsAsFactors = F, strip.white = T)
-
-#edit the landcover class information, so we can plot colours according
-# to hex values in metadata
-
-levels(landcover_pt) <- landcover_classes
-# setting the third column (value = 2, counting from 0) as active
-activeCat(landcover_pt, layer = 1) <- 2
-# # check if worked
-categories(landcover_pt, value=landcover_classes, active=2)
-is.factor(landcover_pt)
-warning('fix this layer thing because I might not need it')
 
 # 4. soil organic carbon data ---------------------------------------------
 warning('fix this')
@@ -217,22 +153,21 @@ plot(SOC_pt)
 # Reproject the different rasters to match the one with lowest resolution,
 # same resolution and origin
 
-warning('Bis hier habe ich mir den Code angeschaut. Ohne die Landcover komme ich hier allerindgs nicht mehr sinnvoll weiter')
-
 data_names <- 
   c("evapotransp_pt", 
     "precipitation_pt", 
     "temperature_pt",
     "landcover_pt",
     "SOC_pt")
+
 # check all resolutions
-warning('is there a nicer way to do this?')
-for (data_name in data_names){
-  print( res(get(data_name)))
-}
-for (data_name in data_names){
-  print(ext(get(data_name)))
-}
+# for (data_name in data_names){
+#   print( res(get(data_name)))
+# }
+# for (data_name in data_names){
+#   print(ext(get(data_name)))
+# }
+
 # we need to lower the resolution of the landcover and soil data to 
 # the weather layer, and also change the origin
 
@@ -256,35 +191,12 @@ landcover_pt_majority <-
   exactextractr::exact_resample(landcover_pt, 
                                 resample_raster, 
                                 'majority')
-warning('forgot the categories again, fix this')
-ggplot() + 
-  geom_spatraster(data = landcover_pt_majority) 
-# this looks much better, the classes are more continuous and less fragmented
-# will work with this layer
-landcover_pt <- landcover_pt_majority
-# need to redefine categories
-levels(landcover_pt) <- landcover_classes
-# setting the third column (value = 2, counting from 0) as active
-activeCat(landcover_pt, layer = 1) <- 2
-check_landcover_cats <- as.data.frame(cats(landcover_pt))
-# # check if worked
-#categories(landcover_pt, value=landcover_classes, active=2)
-is.factor(landcover_pt)
+# ggplot() + 
+#   geom_spatraster(data = landcover_pt_majority) 
+# # this looks much better, the classes are more continuous and less fragmented
+# # will work with this layer
+# landcover_pt <- landcover_pt_majority
 
-# I make a dataframe with the lc categories that exist 
-# in the lower resolution version to be used in plotting later
-lc_categories <- unique(landcover_pt)
-landcover_classes_exist <- lc_categories %>% 
-  left_join(landcover_classes, by = "label")
-
-nrow(landcover_classes_exist)
-# we have 16 classes to work with
-
-ggplot() + 
-  geom_spatraster(data = landcover_pt, mapping = aes(fill = label) )   +
-  scale_fill_manual(
-    values = landcover_classes_exist$hex,
-    na.value = "cadetblue3")
 
 # * resample SOC layer----------------------------------------------
 # for Soil organic carbon I want the mean t/ha for that area
@@ -319,8 +231,47 @@ names(SOC_pt) <- "SOC_2020"
 # * check resample of landcover and SOC ----------------------------------------
 
 # check whether all layers have the same origin, resolution, extent and crs
-compareGeom(evapotransp_pt, precipitation_pt, temperature_pt, 
+compareGeom(evapotransp_pt, precipitation_pt, temperature_pt,
             landcover_pt, SOC_pt)
+
+
+# * Visualise all layers --------------------------------------------------
+# PREP CODE HERE
+
+
+# * Prepare color code for landcover --------------------------------------
+
+# I want to use the labels and hex classes that are stored in 
+# the metadata information
+# landcover_netcdf<- nc_open(("./data/raw/landcover/C3S-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.nc"))
+# print(landcover_netcdf) # look at the metadata and stored in csv 
+
+# extracted from metadata into table 
+# changed hex codes for the three cropland rainfed classes 
+# as they were too similar
+landcover_classes <- read.csv("./data/raw/landcover/lc_classes.csv",
+                              stringsAsFactors = F, strip.white = T)
+
+#edit the landcover class information, so we can plot colours according
+# to hex values in metadata
+# need to define categories
+levels(landcover_pt) <- landcover_classes
+# setting the third column (value = 2, counting from 0) as active
+activeCat(landcover_pt, layer = 1) <- 2
+
+# I make a dataframe with the lc categories that exist 
+# in the lower resolution version to be used in plotting later
+lc_categories <- unique(landcover_pt)
+landcover_classes_exist <- lc_categories %>% 
+  left_join(landcover_classes, by = "label")
+
+# # visualize the lower resolution map
+# ggplot() + 
+#   geom_spatraster(data = landcover_pt, mapping = aes(fill = label) )   +
+#   scale_fill_manual(
+#     values = landcover_classes_exist$hex,
+#     na.value = "cadetblue3")
+
 
 # TRUE, dataprep finished
 
@@ -473,6 +424,7 @@ ggplot(test)+
   scale_colour_manual(
     values = landcover_classes_exist$hex )+
   facet_wrap(~label, scales = "fixed")
+
 
 
 test <- filter(climate_per_lc, variable == "t2m")
