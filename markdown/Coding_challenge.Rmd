@@ -445,9 +445,9 @@ ggplot(precipitation_per_lc )+
 evapotransp_per_lc <- filter(data_analysis_env$climate_per_lc, variable == "e")
 
 ggplot(evapotransp_per_lc )+
-  geom_line(aes(x = date_obs, y = mean_value, color = label, 
+    geom_line(aes(x = date_obs, y = mean_value, color = label, 
                 group = label), )+
-  scale_fill_manual(
+  scale_colour_manual(
     values = data_analysis_env$landcover_colors$hex )+
   labs(x = "Date", y = expression("Mean Evapotranspiration (m)")) + 
   theme_simple()
@@ -479,18 +479,19 @@ ggplot(temperature_per_lc)+
   facet_wrap(~label, scales = "fixed")
 ```
 
+
 ## Exploring soil organic carbon within land cover classes
-I can also look at soil organic carbon per landcover class. As there is only one time point for this layer I used a bar plot for visualisation.
+I can visualize mean soil organic carbon per landcover class. As I only have one time point for this layer I used a bar plot for visualisation.
 
 ```{r visualise_soil_per_landcover,  fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, message=FALSE, warning=FALSE, fig.cap="<span class='caption'>Average soil organic carbon (t/ha) per land cover classes of Portugal.</span>"}
 ggplot(data_analysis_env$SOC_per_lc)+
-  geom_bar(aes(x = label, y = mean_SOC_2020, fill = label), 
+  geom_bar(aes(x = label, y = mean_SOC, fill = label), 
            stat = "identity")+
   scale_fill_manual(
     name = "land cover class",
     values = data_analysis_env$SOC_per_lc$hex )+
-  geom_errorbar( aes(ymin=mean_SOC_2020-stdev_SOC_2020, 
-                     ymax=mean_SOC_2020+stdev_SOC_2020, 
+  geom_errorbar( aes(ymin=mean_SOC-stdev_SOC, 
+                     ymax=mean_SOC+stdev_SOC, 
                      x = label), linewidth = 0.6, width=0.5)+
   xlab("land cover classes")+
   ylab("mean SOC (t/ha)")+
@@ -499,10 +500,84 @@ ggplot(data_analysis_env$SOC_per_lc)+
         axis.ticks.x = element_blank())
 
 ```
-Errorbars show the standard deviation around the mean per class.
+Error bars show the standard deviation around the mean per class.
 
-# Sampling scheme
+# Designing a Sampling Schemes for Soil Organic Carbon
+## Simple scheme 
 
+```{r load_data_sampling, include = FALSE}
+# Load results of data integration -----------------------------------------
+sampling_env<- env()
+source(here("src/analysis/4_Sampling_size_calculation.R"), 
+       local = sampling_env, encoding = "UTF-8")
+```
+Calculate necessary sample size following:
 
+\[
+n = \left(\frac{z \times \sigma}{E}\right)^2
+\]
 
-# Soil model
+to detect changes in SOC if I want a 95% confidence interval equal to or less than 10% of the mean value, assuming a Gaussian distribution.
+<p>The formula calculates the required sample size (<em>n</em>) needed to estimate a population mean within a desired margin of error (<em>E</em>) at a specified confidence level. It considers the variability of the population (<em>σ</em>) and the critical value from the standard normal distribution (<em>z</em>).</p>
+
+The sample size can thus be calculated with the following code:
+```{r code_calculate_samples_low, return = F}
+# calculate variables for sample size
+confidence_level <- 0.95
+z_score <- qnorm(1 - (1 - confidence_level) / 2)
+# calculate standard deviation of soil class
+standard_deviation <- sd(sampling_env$SOC_df$SOC) 
+desired_width <- 0.1 * mean(sampling_env$SOC_df$SOC)
+
+# Calculate the number of samples required
+nr_samples <- (z_score * standard_deviation / desired_width) ^ 2
+```
+
+Working with the landcover at a ~1&deg;<span style="font-size: smaller">&#775;</span>
+resolution, the necessary sample size thus **`r ceiling(nr_samples)`**. This calculated value represents the minimum sample size needed for the analysis.
+```{r code_calculate_samples_high, return = F, echo = FALSE}
+# calculate variables for sample size
+confidence_level <- 0.95
+z_score <- qnorm(1 - (1 - confidence_level) / 2)
+# calculate standard deviation of soil class
+standard_deviation <- sd(sampling_env$SOC_orig_df$SOC) 
+desired_width <- 0.1 * mean(sampling_env$SOC_orig_df$SOC)
+
+# Calculate the number of samples required
+nr_samples_orig <- (z_score * standard_deviation / desired_width) ^ 2
+```
+
+Working with the landcover at the original 250 m resolution and thus a higher variability in the data, the necessary sample size would be **`r ceiling(nr_samples_orig)`**. 
+
+## Visualising a random sampling in space
+
+If we wanted to sample these points in space we could use the `spatSample()` function to suggest random coordinates within Portugal. 
+
+```{r sample_random, fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, fig.cap="Random sampling scheme for the soil organic carbon content (t/ha) in Portugal."}
+
+ggplot() +
+  geom_spatraster(data = sampling_env$SOC_pt )  +
+  geom_sf(data=sf::st_as_sf(sampling_env$sample_points), color="black", size=1, alpha=1)+
+ scale_fill_gradientn(name = "Soil organic carbon (t/ha)",
+                      colors = c("#4c0073", "#2a895a", "#ffffbe",
+                                  na.value = "white"))+
+   theme_simple()
+```
+
+## Visualising stratified sampling in space
+We can also design a sampling scheme for soil organic carbon content that is stratified for land cover classes. In this case we calculate the necessary sample size for the SOC values of all pixels with that landcover class. 
+
+```{r sample_strat, fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, fig.cap="Stratified sampling scheme for the soil organic carbon content (t/ha) within land cover classes in Portugal."}
+ggplot() + 
+  geom_spatraster(data = sampling_env$landcover_pt )   +
+  scale_fill_manual(values = sampling_env$landcover_classes$hex, 
+                    breaks=sampling_env$landcover_classes$label,
+                    labels = paste0(sampling_env$landcover_classes$label, 
+                                    " (sample size: ", 
+                            sampling_env$SOC_sampling_per_lc$nr_samples, ")"))+
+  geom_sf(data=sf::st_as_sf(sampling_env$sample_points_strat ), color = "black", size=0.8, alpha=1)+
+  labs(fill = "Landcover class with SOC sample size") +
+  theme_simple()
+```
+
+Note that all some land cover classes couldn't be sampled within the confidence we wanted as there weren't enough pixels with that class. 
