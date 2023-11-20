@@ -2,7 +2,7 @@
 # Script No 4 -  Climate Farmers coding challenge         #
 # Tasks:                                                  # 
 # - calculate sample size                                 # 
-# - prepare visualisation of samples.                     #
+# - prepare visualization of samples                      #
 #---------------------------------------------------------#
 rm(list = ls())
 
