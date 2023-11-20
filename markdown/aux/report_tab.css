@@ -325,6 +325,17 @@ div.tocify {
    div { break-inside: avoid; }
 }
 
+
+.the-end {
+  text-align: center;
+  margin-top: 50px; /* Adjust as needed */
+  font-size: 24px;
+  font-weight: bold;
+  color: #333; /* Adjust color */
+  text-transform: uppercase;
+}
+
+
 /* Define node label for sankey diagramm
 .node-label{
      text-shadow: none !important;
