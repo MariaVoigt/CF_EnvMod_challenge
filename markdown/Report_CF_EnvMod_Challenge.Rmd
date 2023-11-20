@@ -636,6 +636,7 @@ The final pool sizes of Dissolved and Particulate Matter (DPM), Resistant Partic
   </tr>
 </table>
 
+<div class="vspace_mid"></div>
 
 This simple model could be further expanded and tested for other areas. 
 
