@@ -77,10 +77,6 @@ I decided to work with Portugal, because it includes various types of landcover,
 and has variability in soil organic carbon and climate. I imported the country shape from the gadm database [GADM database](https://gadm.org/download_country.html).
 As I want to work with mainland Portugal, I excluded Madeira and the Azores.
 
-I decided to work with Portugal, because it includes various types of landcover,
-and has variability in soil organic carbon and climate. I imported the country shape from the gadm database [GADM database](https://gadm.org/download_country.html).
-As I want to work with mainland Portugal, I excluded Madeira and the Azores.
-
 ```{r load_data_prep, include = FALSE}
 # Load results for data prep ----------------------------------------------------
 data_prep_env<- env()
@@ -320,6 +316,7 @@ When resampling with method "near" the landcover classes are very patchy and fra
 
 
 ### Soil organic carbon data integration
+<div class="p">
 Soil organic carbon (SOC) is a continous variable. I want to work with the mean SOC per lower resolution cell. Typically continuous rasters are resampled using method bilinear, which calculates values of a grid location based on nearby grid cells, using a weighted average of the four nearest cell centers.  I tested this option, as well as using an average function within the `exact_resample()` function used for land cover. This function aggregates cells before resampling, so that the average is not based on four grid-cells but all grid cells covered by the lower resolution cell. I compared the maps visually in terms of pattern. 
 ```{r resample_code_soil, eval = FALSE}
 # resample option 1
@@ -370,17 +367,142 @@ When resampling with method ´exact_resample´ and function "mean" the pattern o
 <div class="vspace_small"></div>
 
 
+
 # Analysis and Visualization
+```{r load_data_analysis, include = FALSE}
+# Load results of data integration -----------------------------------------
+data_analysis_env<- env()
+source(here("src/analysis/3_Data_analysis_and_visualisation.R"), local = data_analysis_env, encoding = "UTF-8")
+```
 
 I can then check whether the dimensions for all layers match before proceeding with the analysis using the ´compareGeom()´ function.
 ```{r code_compareGEOM, eval = FALSE}
 compareGeom(evapotransp_pt, precipitation_pt, temperature_pt,
             landcover_pt, SOC_pt)
 ```
+<div class="vspace_small"></div>
+
+## Exploring land cover distribution
+Now I can analyse climate and soil organic carbon within the land cover classes in Portugal. First I want to explore what the share of each landcover class is.
+
+```{r visualise landcover classes,  fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, message=FALSE, warning=FALSE, fig.cap="<span class='caption'>Land cover classes of Portugal and their proportions. All classes with bars below the dashed line were excluded, as well as water and NA.</span>"}
+## visualise distribution of landcover classes
+ggplot(data_analysis_env$variables_df)+
+  geom_bar(aes(x = label, fill = label))+ 
+  geom_hline(yintercept = 10, linetype = "dashed", color = "black") +  
+  scale_fill_manual(
+    name = "Number of pixels with land cover class",
+    values = data_analysis_env$landcover_colors_all$hex )+
+  labs(fill = NULL)+
+  xlab("land cover classes")+
+  xlab("pixel count")+
+  theme_simple()+
+   theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+```
+
+<div class="vspace_small"></div>
+
+For the next steps I excluded the land cover classes with less than 1% of overall pixels (i.e. 10 pixels or less), as well as pixels that had land cover "water" or "NA", which were 2.5% and 1% respectively of all pixels.
+
+## Exploring climate variables over time{.tabset}
+We can look at climate variables per land cover class over time. Depending on what needs to be communicated, plots can highlight different parts. I have first looked at how the mean values change over the months from 2020 to 2022 for all landcover classes together. This is a nice way to show where certain landcover classes behave differently than others. 
+
+### Temperature
+
+```{r visualise_climate1,  fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, message=FALSE, warning=FALSE, fig.cap="<span class='caption'>Mean temperature in different land cover classes in Portugal from 2020 to 2022.</span>"}
+
+temperature_per_lc <- filter(data_analysis_env$climate_per_lc, variable == "t2m")
+
+ggplot(temperature_per_lc)+
+  geom_line(aes(x = date_obs, y = mean_value, color = label, 
+                group = label), )+
+  scale_colour_manual(
+    values = data_analysis_env$landcover_colors$hex )+
+  labs(x = "Date", y = expression("Mean Temperature (" ~ degree * "C)")) + 
+  theme_simple()
+```
+
+### Precipitation
+```{r visualise_climate2,  fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, message=FALSE, warning=FALSE, fig.cap="<span class='caption'>Mean precipitation in different land cover classes in Portugal from 2020 to 2022.</span>"}
+
+precipitation_per_lc <- filter(data_analysis_env$climate_per_lc, variable == "tp")
+
+ggplot(precipitation_per_lc )+
+    geom_line(aes(x = date_obs, y = mean_value, color = label, 
+                group = label), )+
+  scale_colour_manual(
+    values = data_analysis_env$landcover_colors$hex )+
+  labs(x = "Date", y = expression("Mean Precipitation (m)")) + 
+  theme_simple()
+
+```
+
+### Evapotranspiration
+```{r visualise_climate3,  fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, message=FALSE, warning=FALSE, fig.cap="<span class='caption'>Mean evapotranspiration in different land cover classes in Portugal from 2020 to 2022.</span>"}
+
+evapotransp_per_lc <- filter(data_analysis_env$climate_per_lc, variable == "e")
+
+ggplot(evapotransp_per_lc )+
+  geom_line(aes(x = date_obs, y = mean_value, color = label, 
+                group = label), )+
+  scale_fill_manual(
+    values = data_analysis_env$landcover_colors$hex )+
+  labs(x = "Date", y = expression("Mean Evapotranspiration (m)")) + 
+  theme_simple()
+
+```
+
+
+## Exploring mean temperature for each land cover class (example)
+Depending on what the focus of the visualization should be, I could also look at each land cover class separately. This visualization is better to compare overall differences in the individual patterns and allows to plot the standard deviation as errors around each line, which isn't very visible in the combined plot. I am showing temperature here as an example.
+
+```{r visualise_climate4,  fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, message=FALSE, warning=FALSE, fig.cap="<span class='caption'>title title titles.</span>"}
+
+temperature_per_lc <- filter(data_analysis_env$climate_per_lc, variable == "t2m")
+
+ggplot(temperature_per_lc)+
+  geom_ribbon(aes(x = date_obs, 
+                  ymin = mean_value - stdev_value, 
+                  ymax = mean_value +   stdev_value, fill = label),
+              alpha = 0.3) +  # Adjust transparency as needed
+  geom_line(aes(x = date_obs, y = mean_value, color = label, 
+                group = label), )+
+  scale_fill_manual(
+    values = data_analysis_env$landcover_colors$hex )+
+  scale_colour_manual(
+    values = data_analysis_env$landcover_colors$hex )+
+  labs(x = "Date", y = expression("Mean Temperature (" ~ degree * "C)")) + 
+  theme_simple()+
+  theme(strip.text = element_text(size = 6))+
+  facet_wrap(~label, scales = "fixed")
+```
+
+## Exploring soil organic carbon within land cover classes
+I can also look at soil organic carbon per landcover class. As there is only one time point for this layer I used a bar plot for visualisation.
+
+```{r visualise_soil_per_landcover,  fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, message=FALSE, warning=FALSE, fig.cap="<span class='caption'>Average soil organic carbon (t/ha) per land cover classes of Portugal.</span>"}
+ggplot(data_analysis_env$SOC_per_lc)+
+  geom_bar(aes(x = label, y = mean_SOC_2020, fill = label), 
+           stat = "identity")+
+  scale_fill_manual(
+    name = "land cover class",
+    values = data_analysis_env$SOC_per_lc$hex )+
+  geom_errorbar( aes(ymin=mean_SOC_2020-stdev_SOC_2020, 
+                     ymax=mean_SOC_2020+stdev_SOC_2020, 
+                     x = label), linewidth = 0.6, width=0.5)+
+  xlab("land cover classes")+
+  ylab("mean SOC (t/ha)")+
+  theme_simple()+
+   theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+```
+Errorbars show the standard deviation around the mean per class.
 
 # Sampling scheme
 
 
+
 # Soil model
-
-
