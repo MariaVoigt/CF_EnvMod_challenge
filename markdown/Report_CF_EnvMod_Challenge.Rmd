@@ -13,9 +13,9 @@ output:
 
 
 <div class="vspace_big"></div>
-<img src="./aux/cropped_climate_farmers.png" alt="Red Line" class="img_center" width= 10% height=5%></img>
+<img src="./aux/cropped_climate_farmers.png" alt="climate farmer logo" class="img_center" width= 10% height=5%></img>
 <div class="vspace_small"></div>
-<p style="font-size:2em; font-weight:100; text-align: center">Coding challenge for Climate Farmers</p>
+<p style="font-size:2em; font-weight:100; text-align: center">Climate Farmer Coding Challenge - Environmental Modeller & Researcher</p>
 <div class="vspace_small"></div>
 
 
