@@ -27,6 +27,7 @@ library(tidyverse)   # Collection of R packages designed for data science
 library(rlang)       # A toolbox for working with base type (e.g. environments)
 library(htmltools)   # Tools for HTML generation and output
 library(here)        # Facilitates easy file path management within R projects
+library(knitr)       # Provides dynamic report generation and table formatting
 # spatial operations
 library(sf)           # Comprehensive toolset for handling spatial data
 library(terra)        # Efficient manipulation & analysis of raster data
@@ -70,7 +71,7 @@ source(here("src/functions/0_visualise_landcover_classes.R"))
 
 
 # Region Selection and Data Aqcuisition
-## Region selection and basemap preparation 
+## Region selection and Basemap preparation 
 
 
 I decided to work with Portugal, because it includes various types of landcover,
@@ -370,7 +371,7 @@ When resampling with method ´exact_resample´ and function "mean" the pattern o
 
 # Analysis and Visualization
 ```{r load_data_analysis, include = FALSE}
-# Load results of data integration -----------------------------------------
+# Load results of data analysis -----------------------------------------
 data_analysis_env<- env()
 source(here("src/analysis/3_Data_analysis_and_visualisation.R"), local = data_analysis_env, encoding = "UTF-8")
 ```
@@ -503,10 +504,10 @@ ggplot(data_analysis_env$SOC_per_lc)+
 Error bars show the standard deviation around the mean per class.
 
 # Designing a Sampling Schemes for Soil Organic Carbon
-## Simple scheme 
+## Simple scheme for sampling 
 
 ```{r load_data_sampling, include = FALSE}
-# Load results of data integration -----------------------------------------
+# Load results of sample size calculation -------------------------------------
 sampling_env<- env()
 source(here("src/analysis/4_Sampling_size_calculation.R"), 
        local = sampling_env, encoding = "UTF-8")
@@ -580,4 +581,52 @@ ggplot() +
   theme_simple()
 ```
 
-Note that all some land cover classes couldn't be sampled within the confidence we wanted as there weren't enough pixels with that class. 
+
+# Soil model
+I implemented a very simple soil model using the package 'soilR' and  RothC. The setup assumes that the only information available are the percent clay content in the topsoil, which I extracted for a point within Portugal from the SoilGrids database, an assumed annual amount of litter inputs, and monthly averages of climatic variables for that same point. The model is run 300 years into the future.
+
+```{r load_soil_model, include = FALSE}
+# Load results of soil model -----------------------------------------
+soilmod_env<- env()
+source(here("src/analysis/5_Soil_model.R"), 
+       local = soilmod_env, encoding = "UTF-8")
+```
+
+
+
+```{r soil_model_out, fig.asp = 0.8, fig.width = 10, echo = FALSE, return = FALSE, fig.cap="Output of simple soil model using RothC."}
+
+ggplot(soilmod_env$df_plot_long, aes(x = years, y = C_stocks, color = Pool)) +
+  geom_line() +
+  labs(x = "Time (years)", y = "C stocks (Mg/ha)", 
+       title = "Carbon Stocks Over Time") +
+  scale_color_manual(values = c("blue", "red", "green", "orange", "purple"),
+                     #labels = c("DPM", "RPM", "BIO", "HUM", "IOM"
+                     labels = c("Dissolved and Particulate Matter", "Resistant Particulate Matter", "Biomass", "Humus", "Inert Organic Matter")
+                     ) +
+  theme_simple()
+
+```
+
+
+The final pool sizes of Dissolved and Particulate Matter (DPM), Resistant Particulate Matter (RPM), Biomass (BIO), Humus (HUM), and Inert Organic Matter (IOM) for this point in Portugal with assumed parameters are then:
+
+<table border='1' style='border-collapse: collapse;'>
+  <tr>
+    <th style='padding: 10px;'>DPM</th>
+    <th style='padding: 10px;'>RPM</th>
+    <th style='padding: 10px;'>BIO</th>
+    <th style='padding: 10px;'>HUM</th>
+    <th style='padding: 10px;'>IOM</th>
+  </tr>
+  <tr>
+    <td style='padding: 10px;'>`r soilmod_env$pool_size["DPM"]`</td>
+    <td style='padding: 10px;'>`r soilmod_env$pool_size["RPM"]`</td>
+    <td style='padding: 10px;'>`r soilmod_env$pool_size["BIO"]`</td>
+    <td style='padding: 10px;'>`r soilmod_env$pool_size["HUM"]`</td>
+    <td style='padding: 10px;'>`r soilmod_env$pool_size["IOM"]`</td>
+  </tr>
+</table>
+
+
+
