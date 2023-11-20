@@ -4,7 +4,6 @@
 # - calculate sample size                                 # 
 # - prepare visualization of samples                      #
 #---------------------------------------------------------#
-rm(list = ls())
 
 # load packages ---------------------------------------------------------
 # basic

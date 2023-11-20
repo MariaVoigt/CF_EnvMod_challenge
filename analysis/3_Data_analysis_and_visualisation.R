@@ -3,8 +3,6 @@
 # Tasks:                                                  # 
 # - prepare data for visualisation.                       #
 #---------------------------------------------------------#
-rm(list = ls())
-
 # load packages ---------------------------------------------------------
 # basic
 library(tidyverse)   # Collection of R packages designed for data science
@@ -102,11 +100,9 @@ climate_per_lc <- variables_df_filter  %>%
 
 SOC_per_lc <- variables_df_filter  %>% 
   group_by(label) %>% 
-  summarize(mean_SOC = mean(SOC, na.rm = T), # calculating mean
-            stdev_SOC = sd(SOC, na.rm = T), # calculating stdeviation
-            nr_pixels = n()) %>% # how many pixels in each class
+  summarize(mean_SOC = mean(SOC, na.rm = T), 
+            stdev_SOC = sd(SOC, na.rm = T), 
+            nr_pixels = n()) %>% 
   left_join(landcover_classes, by = "label")
-
-
 
 # end ---------------------------------------------------------------------

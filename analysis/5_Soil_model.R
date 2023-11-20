@@ -81,4 +81,5 @@ df_plot_long <- df_plot %>%
 # Calculate final pool sizes
 pool_size <- as.numeric(tail(Ct1, 1))
 names(pool_size) <- c("DPM", "RPM", "BIO", "HUM", "IOM")
+
 # end ---------------------------------------------------------------------

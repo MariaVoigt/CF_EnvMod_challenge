@@ -59,10 +59,6 @@ pt_lat = c(36.820, 42.253)
 # clip the shape of Portugal with the bounding box using customized function
 pt_mainland <- clip_polygon_with_box(pt_shape, lon = pt_lon, lat = pt_lat)
 
-# can plot the data to check
-#ggplot() + 
-#  geom_sf(data =  sf::st_as_sf(pt_mainland), fill = "grey" )
-
 # option to write out for later use and checking in qgis
 # would switch this off if script read often and running times are important 
 writeVector(pt_mainland, here("data/processed/study_area/mainland_portugal.shp"),
