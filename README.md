@@ -25,7 +25,7 @@ The analysis scripts (1-5) are located in the `analysis` folder:
   - **Tasks:**
     - Formats data for the soil model.
     - Implements the soil model.
-    - Plots the soil model.
+    - Prepares outputs of the soil model.
 
 ### Function Script
 The function script for visualizing landcover classes is stored in the `functions` folder.
