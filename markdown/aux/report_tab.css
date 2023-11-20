@@ -1,0 +1,334 @@
+.title{/* remove title*/
+  display: none;
+}
+
+.author{/* remove author*/
+  display: none;
+}
+
+.date{/* format date*/
+  position:absolute; 
+  top:1.5em;
+  right:40px;
+  font-family: Verdana, Arial;
+  font-size: .9em;
+  color: #2c3e50; /* Dark Blue */
+}
+
+.main-container { /* Main container */
+  max-width: 100%;
+  width: 100%;
+  background-color: #FFFFFF;
+  box-shadow: 0 0 15px #888888;
+  border-radius: 10px;
+}
+
+body{ /* Basic document  */
+  background-color: #F0F0F0;
+  max-width: 1440px;
+  min-width: 900px;
+  width: auto;
+  margin-left:auto;
+  margin-right:auto;
+  font-family: Verdana, Arial;
+  font-size: 14px;
+  text-align: justify;
+  color: #2c3e50; /* Dark Blue */
+}
+
+.p {/* provide paragraph class */
+  font-size: .8em;
+  width: 100%;
+  margin-left:auto;
+  margin-right:auto;
+  column-count: 1;
+}
+
+.p2 {/* provide paragraph class */
+  font-size: .8em;
+  width: 100%;
+  margin-left:auto;
+  margin-right:auto;
+  column-count: 2;
+  column-gap: 40px;
+}
+
+.vspace_small { /* provide vertival space class*/
+    margin-bottom: 30px;
+}
+
+.vspace_mid { /* provide vertival space class*/
+    margin-bottom: 50px;
+}
+
+.vspace_big { /* provide vertival space class*/
+    margin-bottom: 200px;
+}
+  
+img { /* Basic images */
+  opacity: 1;
+  display: block;
+  position: relative;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+.caption {/* provide caption class */
+  font-size: 3 em;
+  color: #535353;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  margin-left:40px;
+  margin-right:auto;
+  width: 100%;
+  font-style: italic;
+}
+
+
+td {  /* Table  */
+  font-size: 12px;
+}
+  
+h1 { /* Header 1 */
+  width: 100%;
+  margin-left:auto;
+  margin-right:auto;
+  font-size: 1.2em;
+  font-weight:800;
+  color: #2c3e50;
+}
+  
+h2 { /* Header 2 */
+  width: 100%;
+  margin-left:auto;
+  margin-right:auto;
+  font-size: .9em;
+  color: #2c3e50;
+  font-weight: 800;
+}
+  
+h3 { /* Header 3 */
+  width: 100%;
+  margin-left:auto;
+  margin-right:auto;
+  font-size: .9em;
+  color: #2c3e50;
+  text-decoration: underline;
+}
+
+.tbl_sel {
+  font-size: .8em; 
+  width: 100%;
+  height: 150px;
+  display: grid;
+    grid-template-columns: 100px 100px 300px; 
+    grid-template-rows: 100px;
+    grid-column-gap: 20px;
+}
+
+.tbl_down {
+  font-size: .8em;
+  font-family: Verdana, Arial;
+  color: #2c3e50;
+  font-weight: 800;
+  border: none;
+  border-radius: 10px;
+}
+
+.tbl_down:hover {
+  color: #2c3e50;
+  background-color: #eee;
+}
+
+.tbl_header {
+  border-bottom: 2px solid #2c3e50;
+  font-size: .8em;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.tbl_header:hover {
+  background-color: #eee;
+}
+
+.tbl_icons {
+  vertical-align: middle;
+  display: grid;
+    grid-template-columns: 30px 30px 30px 30px; 
+    grid-template-rows: 30px;
+    grid-column-gap: 5px;
+    align-items: center;
+   justify-content:center;
+}
+
+.tbl_number {
+  font-size: .8em;
+  white-space: pre;
+  display: grid;
+    align-items: center;
+}
+
+.tbl_char {
+  font-size: .8em;
+  white-space: pre;
+  display: grid;
+    align-items: center;
+}
+
+.nav>li>a {
+    position: relative;
+    display: block;
+    font-size: 0.9em;
+    color: #2c3e50;
+    font-weight: 800;
+    padding: 5px 30px;
+    border: none;
+}
+
+.nav>li:hover>a{
+    border-radius: 10px;
+    border: none;
+}
+
+.nav>li.active>a,
+.nav>li.active>a:hover,
+.nav>li.active>a:focus{
+    position: relative;
+    display: block;
+    font-weight: 800;
+    font-size: 0.9em;
+    background-color: #3f9781; 
+    color: #F0F0F0;
+    padding: 5px 30px;
+    border-radius: 10px;
+    border: none;
+}
+
+.r{ /* Code block */
+  font-size: 14px;
+}
+  
+pre { /* Code block - determines code spacing between lines */
+  font-size: 14px;
+  background-color: #f4f4f4;
+  padding: 10px;
+  border-radius: 5px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-x: auto;
+}
+  
+/* Styling the code within code blocks */
+pre code {
+  color:#333;
+  white-space: pre-wrap;
+}  
+
+/* Styling function names within R code blocks */
+code .nf, code .f {
+  color: #0e6e56ff; /* Change function names to a shade of blue */
+}
+  
+a {  /* links */
+  color: #3f9781;
+}
+
+a:hover { /* links darker color when hovering */
+  color:#0e6e56ff; 
+}
+  
+/* Styling the code blocks */
+pre {
+
+}
+
+
+  /* Format the Table of content */
+#TOC {
+  margin: 25px 0 20px 0;
+  border-width: 0px 0px 0px 0px;
+  padding-bottom: 10px;
+  border-color: #F0F0F0;
+  padding-top: 85px;
+  text-align: left;
+}
+  
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+  
+.tocify-header .tocify-item {
+  font-size: 1em;
+  padding-left: 10px;
+  text-indent: 0;
+}
+  
+.tocify-subheader .tocify-item {
+  font-size: 0.85em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0;
+}
+
+.tocify .list-group-item:hover {
+  background-color: #eee;
+  border: none;
+  border-radius: 10px;
+}
+
+.tocify .list-group-item.active {
+  color: white;
+  font-weight:700;
+  background-color: #3f9781;
+  border: none;
+  border-radius: 10px;
+}
+
+/* Define the table of content */   
+@media (max-width: 768px) {
+  #TOC {
+    position: relative;
+    width: 100%;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media print {
+  #TOC { display: none; }
+   div { break-inside: avoid; }
+}
+
+/* Define node label for sankey diagramm
+.node-label{
+     text-shadow: none !important;
+     fill: #2c3e50 !important;
+}
+*/
+
